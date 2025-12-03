@@ -29,8 +29,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Home backend IP storage (per session)
+// FIND THIS FUNCTION (around line 40-45):
+
+
+// REPLACE IT WITH:
 function getHomeBackendIP(req) {
-  return req.session.homeBackendIP;
+  // Always return your hardcoded IP
+  return '86.179.128.190:8080';
 }
 
 function setHomeBackendIP(req, ip) {
@@ -128,342 +133,31 @@ async function makeRequestToHomeBackend(req, endpoint, options = {}) {
   }
 }
 
-// Configuration page
-app.get('/config', (req, res) => {
-  const currentIP = getHomeBackendIP(req);
-  
-  res.send(`
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoidChat - Configure Home Backend</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .config-container {
-            background: rgba(45, 45, 45, 0.8);
-            border-radius: 16px;
-            padding: 40px;
-            width: 100%;
-            max-width: 500px;
-            border: 1px solid #333;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px);
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 2rem;
-        }
-        .subtitle {
-            text-align: center;
-            color: #a0a0a0;
-            margin-bottom: 30px;
-            font-size: 0.9rem;
-        }
-        .form-group { margin-bottom: 20px; }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #a0a0a0;
-            font-weight: 500;
-        }
-        input {
-            width: 100%;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #333;
-            border-radius: 10px;
-            color: white;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-        input:focus {
-            outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-        .examples {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            border-left: 4px solid #6366f1;
-        }
-        .examples h3 {
-            color: #6366f1;
-            margin-bottom: 10px;
-            font-size: 1rem;
-        }
-        .examples ul {
-            list-style: none;
-            color: #a0a0a0;
-        }
-        .examples li {
-            margin: 5px 0;
-            padding-left: 20px;
-            position: relative;
-        }
-        .examples li:before {
-            content: "•";
-            color: #6366f1;
-            position: absolute;
-            left: 0;
-        }
-        .instructions {
-            background: rgba(255, 193, 7, 0.1);
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            border-left: 4px solid #ffc107;
-        }
-        .instructions h3 {
-            color: #ffc107;
-            margin-bottom: 10px;
-            font-size: 1rem;
-        }
-        .instructions p {
-            color: #ffc107;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-        .btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
-        }
-        .current-ip {
-            margin-top: 20px;
-            padding: 10px;
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 8px;
-            border-left: 4px solid #10b981;
-            color: #10b981;
-            text-align: center;
-        }
-        .status {
-            text-align: center;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .status.success {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid #10b981;
-            color: #10b981;
-        }
-        .status.error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid #ef4444;
-            color: #ef4444;
-        }
-        .link {
-            text-align: center;
-            margin-top: 20px;
-            color: #a0a0a0;
-        }
-        .link a {
-            color: #6366f1;
-            text-decoration: none;
-        }
-        .link a:hover { text-decoration: underline; }
-    </style>
-</head>
-<body>
-    <div class="config-container">
-        <h1>VoidChat</h1>
-        <div class="subtitle">Connect to your Home Backend</div>
-        
-        <div id="statusMessage" class="status"></div>
-        
-        <form id="configForm">
-            <div class="form-group">
-                <label for="homeBackendIP">Your Home Backend Address</label>
-                <input 
-                    type="text" 
-                    id="homeBackendIP" 
-                    placeholder="e.g., 192.168.1.100:8080 or yourdomain.com"
-                    value="${currentIP || ''}"
-                    required>
-            </div>
-            
-            <div class="examples">
-                <h3>Examples:</h3>
-                <ul>
-                    <li>Local IP: 192.168.1.100:8080</li>
-                    <li>Public IP: 123.456.78.90:8080</li>
-                    <li>ngrok: https://abc123.ngrok.io</li>
-                    <li>Domain: yourdomain.com:8080</li>
-                </ul>
-            </div>
-            
-            <div class="instructions">
-                <h3>How to get this:</h3>
-                <p>1. Run your home backend on your local machine<br>
-                   2. Use port forwarding on your router OR<br>
-                   3. Use ngrok: <code>ngrok http 8080</code><br>
-                   4. Enter the address shown above</p>
-            </div>
-            
-            <button type="submit" class="btn">Connect to Home Backend</button>
-        </form>
-        
-        ${currentIP ? `
-        <div class="current-ip">
-            Currently connected to: <strong>${currentIP}</strong>
-        </div>
-        ` : ''}
-        
-        <div class="link">
-            Already configured? <a href="/">Go to VoidChat</a>
-        </div>
-    </div>
 
-    <script>
-        const form = document.getElementById('configForm');
-        const statusMessage = document.getElementById('statusMessage');
-        
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const ip = document.getElementById('homeBackendIP').value.trim();
-            if (!ip) {
-                showError('Please enter your home backend address');
-                return;
-            }
-            
-            try {
-                showStatus('Testing connection...', 'info');
-                
-                const response = await fetch('/api/set-backend', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ip })
-                });
-                
-                if (response.ok) {
-                    showSuccess('Configuration saved! Redirecting...');
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1500);
-                } else {
-                    const data = await response.json();
-                    showError(data.error || 'Failed to save configuration');
-                }
-                
-            } catch (error) {
-                console.error('Error:', error);
-                showError('Network error. Please try again.');
-            }
-        });
-        
-        function showStatus(message, type) {
-            statusMessage.textContent = message;
-            statusMessage.className = 'status';
-            statusMessage.style.display = 'block';
-            
-            if (type === 'error') {
-                statusMessage.classList.add('error');
-            } else if (type === 'success') {
-                statusMessage.classList.add('success');
-            }
-        }
-        
-        function showSuccess(message) {
-            showStatus(message, 'success');
-        }
-        
-        function showError(message) {
-            showStatus(message, 'error');
-        }
-    </script>
-</body>
-</html>
-  `);
+// REPLACE IT WITH:
+app.get('/config', (req, res) => {
+  res.redirect('/');
 });
 
 // API to set home backend IP
-app.post('/api/set-backend', async (req, res) => {
-  const { ip } = req.body;
-  
-  if (!ip) {
-    return res.status(400).json({ error: 'IP is required' });
-  }
-  
-  // Test the connection first
-  try {
-    let testUrl = ip.trim();
-    if (!testUrl.startsWith('http')) {
-      testUrl = `http://${testUrl}`;
-    }
-    
-    const testResponse = await axios.get(`${testUrl}/api/health`, {
-      timeout: 10000
-    });
-    
-    if (testResponse.data.status === 'ok') {
-      setHomeBackendIP(req, ip);
-      return res.json({ 
-        success: true, 
-        message: 'Backend connected successfully',
-        backendInfo: testResponse.data
-      });
-    } else {
-      return res.status(400).json({ 
-        error: 'Invalid backend response',
-        message: 'The backend responded but with an unexpected format'
-      });
-    }
-  } catch (error) {
-    console.error('Backend test failed:', error.message);
-    
-    // Still allow saving even if test fails (user might be offline)
-    setHomeBackendIP(req, ip);
-    
-    return res.json({ 
-      success: true, 
-      message: 'Backend saved but could not verify connection. You can still try.',
-      warning: 'Could not verify backend connection: ' + error.message
-    });
-  }
+// FIND THIS ROUTE (around line 300):
+
+
+// REPLACE IT WITH:
+app.post('/api/set-backend', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Backend is hardcoded to 86.179.128.190:8080',
+    homeBackendIP: '86.179.128.190:8080'
+  });
 });
 
-// Main VoidChat application
+
+
+// REPLACE WITH:
 app.get('/', async (req, res) => {
-  const homeBackendIP = getHomeBackendIP(req);
-  
-  if (!homeBackendIP) {
-    return res.redirect('/config');
-  }
-  
-  // Send the complete VoidChat HTML with integrated frontend
-  res.send(getVoidChatHTML(homeBackendIP));
+  // Always use hardcoded IP
+  res.send(getVoidChatHTML('86.179.128.190:8080'));
 });
 
 // Function to generate the complete VoidChat HTML
@@ -1270,13 +964,15 @@ function getVoidChatHTML(homeBackendIP) {
   </style>
 </head>
 <body>
-  <div class="config-banner" id="configBanner">
-    <div class="config-info">
-      <span>Connected to:</span>
-      <span class="config-ip" id="currentBackendIP">${homeBackendIP}</span>
-    </div>
-    <button class="config-btn" onclick="window.location.href='/config'">Change Backend</button>
+
+
+// REPLACE WITH:
+<div class="config-banner" id="configBanner">
+  <div class="config-info">
+    <span>Connected to hardcoded backend:</span>
+    <span class="config-ip" id="currentBackendIP">86.179.128.190:8080</span>
   </div>
+</div>
 
   <div class="auth-container" id="authContainer">
     <div class="auth-box">
@@ -1527,27 +1223,28 @@ function getVoidChatHTML(homeBackendIP) {
       }
     }
     
-    // Test backend connection
-    async function testBackendConnection() {
-      try {
-        const response = await fetch('/api/health');
-        if (response.ok) {
-          const data = await response.json();
-          backendConnected = data.homeBackendConfigured;
-          
-          if (backendConnected) {
-            showConnectionStatus(true, 'Connected to home backend');
-          } else {
-            showConnectionStatus(false, 'No home backend configured');
-          }
-          return backendConnected;
-        }
-      } catch (error) {
-        console.error('Connection test failed:', error);
-        showConnectionStatus(false, 'Cannot reach Render backend');
-        return false;
+
+
+// REPLACE WITH:
+async function testBackendConnection() {
+  try {
+    const response = await fetch('/proxy/api/health');
+    if (response && response.ok) {
+      const data = await response.json();
+      if (data.status === 'ok') {
+        showConnectionStatus(true, 'Connected to 86.179.128.190:8080');
+        backendConnected = true;
+        return true;
       }
     }
+  } catch (error) {
+    console.error('Connection test failed:', error);
+  }
+  
+  showConnectionStatus(false, 'Cannot connect to 86.179.128.190:8080');
+  backendConnected = false;
+  return false;
+}
     
     // Authentication functions
     function switchTab(mode) {
@@ -2514,14 +2211,18 @@ app.get('/api/get-backend', (req, res) => {
   res.json({ homeBackendIP: ip || null });
 });
 
+// FIND THIS ROUTE (around line 700):
+
+
+// CHANGE TO:
 app.get('/api/health', (req, res) => {
-  const homeBackendIP = getHomeBackendIP(req);
   res.json({
     status: 'ok',
     service: 'voidchat-render-proxy',
-    homeBackendConfigured: !!homeBackendIP,
-    homeBackendIP: homeBackendIP,
-    timestamp: new Date().toISOString()
+    homeBackendConfigured: true,
+    homeBackendIP: '86.179.128.190:8080',
+    timestamp: new Date().toISOString(),
+    note: 'Hardcoded to 86.179.128.190:8080'
   });
 });
 
